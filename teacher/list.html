@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title><!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>教师列表</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+
+  <div class="layui-fluid">   
+    <div class="layui-card">
+
+      
+      <div class="layui-card-body">
+        <div style="padding-bottom: 10px;" id="optDiv">
+          
+        </div>
+        
+        <table id="teacherTable" lay-filter="teacherTable"></table>
+
+        <script type="text/html" id="verifyTpl">
+          {{#  if(d.verify == null){ }}
+            <button class="layui-btn layui-btn-primary layui-btn-xs">未审核</button>
+          {{#  } else if(d.verify == '1'){ }}
+            <button class="layui-btn layui-btn-xs">已审核</button>
+          {{#  } else { }}
+            <button class="layui-btn layui-btn-danger layui-btn-xs">未通过</button>
+          {{#  }  }}
+        </script>
+        <script type="text/html" id="table-teacher">
+          <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="verify"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+          <!-- <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-delete"></i>删除</a> -->
+        </script>
+        <script type="text/html" id="genderTpl">
+          {{#  if(d.gender == '0'){ }}
+            女
+          {{#  } else if(d.gender == '1'){ }}
+            男
+          {{#  } else { }}
+            保密
+          {{#  }  }}
+        </script>
+      </div>
+
+    </div>
+  </div>
+
+<div class="layui-form" id="verifyDiv" style="display: none;" lay-filter="verifyForm">
+  <div class="layui-form-item">
+    <div class="layui-input-block" >
+      <input type="radio" name="verify" lay-filter="verifyRadio" value="0" title="未通过">
+      <input type="radio" name="verify" lay-filter="verifyRadio" value="1" title="通过" checked>
+    </div>
+  </div>
+</div>
+
+ <script src="/layuiadmin/layui/layui.js"></script>  
+  <script>
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'useradmin', 'table','setter'], function(){
+    var $ = layui.$
+    ,form = layui.form
+    ,table = layui.table
+    ,admin = layui.admin
+    ;
+
+    form.on('radio(verifyRadio)', function(data){}); 
+
+    table.render({
+      elem: '#teacherTable'
+      ,url: layui.setter.apiURL + "/user/list"
+      ,cols: [[
+        {field: 'realname', width: 100, title: '姓名'}
+        ,{field: 'gender', title: '性别', templet: '#genderTpl'}
+        ,{field: 'verify', title: '审核状态', templet: '#verifyTpl'}
+        ,{title: '操作', width: 150, align:'center', fixed: 'right', toolbar: '#table-teacher'}
+      ]]
+      ,parseData: function(res){
+        console.log("parseData,res",res);
+        return {
+          "code": res.code > 0 ? 0 : res.code,
+          "msg": res.msg,
+          "count": res.data.value.total,
+          "data": res.data.value.list
+        };
+      }
+      ,where: {"u_type": 2}
+      ,headers: {"Authorization": (layui.data("learndb")["Authorization"] || '')}
+      ,request: {
+        pageName: 'page_num' //页码的参数名称，默认：page
+        ,limitName: 'page_size' //每页数据量的参数名，默认：limit
+      }
+      ,page: true
+      ,limit: 10
+      ,height: 'full-220'
+      ,text: '对不起，加载出现异常！'
+      ,done: function(res, curr, count){
+        //如果是异步请求数据方式，res即为你接口返回的信息。
+        //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+        console.log(res);
+        
+        //得到当前页码
+        console.log(curr); 
+        
+        //得到数据总量
+        console.log(count);
+      }
+    });
+
+    
+    //监听工具条
+  table.on('tool(teacherTable)', function(obj){
+    var data = obj.data;
+    if(obj.event === 'verify'){
+      console.log("verify",obj);
+      layer.open({
+        type: 1
+        ,title: '审核'
+        ,content: $("#verifyDiv")
+        ,area: ['500px', '450px']
+        ,btn: ['确定', '取消']
+        ,yes: function(index, layero){
+          console.log("yes");
+          var d = {};
+          var t = $('#verifyDiv [name]').serializeArray();
+          console.log("t=",t);
+          $.each(t, function() {
+            d[this.name] = this.value;
+          });
+          saveVerify(data.id, d.verify);
+          layer.close(index);
+        }
+        ,success: function(layero, index){
+          //打开审核框，初始化预置值
+          if(data.verify != null){
+            form.val("verifyForm", {
+              "verify": data.verify
+            });
+          }
+          console.log("success");
+        }
+      });
+
+    } else if(obj.event === 'del'){
+      layer.prompt({
+        formType: 1
+        ,title: '敏感操作，请验证口令'
+      }, function(value, index){
+        layer.close(index);
+        
+        layer.confirm('真的删除行么', function(index){
+          obj.del();
+          layer.close(index);
+        });
+      });
+    } else if(obj.event === 'edit'){
+      var tr = $(obj.tr);
+
+      layer.open({
+        type: 2
+        ,title: '编辑用户'
+        ,content: '../../../views/user/user/userform.html'
+        ,maxmin: true
+        ,area: ['500px', '450px']
+        ,btn: ['确定', '取消']
+        ,yes: function(index, layero){
+          var iframeWindow = window['layui-layer-iframe'+ index]
+          ,submitID = 'LAY-user-front-submit'
+          ,submit = layero.find('iframe').contents().find('#'+ submitID);
+
+          //监听提交
+          iframeWindow.layui.form.on('submit('+ submitID +')', function(data){
+            var field = data.field; //获取提交的字段
+            
+            //提交 Ajax 成功后，静态更新表格中的数据
+            //$.ajax({});
+            table.reload('LAY-user-front-submit'); //数据刷新
+            layer.close(index); //关闭弹层
+          });  
+          
+          submit.trigger('click');
+        }
+        ,success: function(layero, index){
+          
+        }
+      });
+
+    }
+  });
+  
+  function saveVerify(userId,verify){
+    admin.req({
+         url: layui.setter.apiURL + "/user/verify/"+userId+"/"+verify
+         ,type: "put"
+        ,done: function(res){
+          table.reload("teacherTable");
+        }
+      });
+  }
+
+
+
+
+
+  });
+
+
+
+  </script>
+</body>
+</html>

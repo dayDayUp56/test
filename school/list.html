@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>学校列表</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+
+  <div class="layui-fluid">   
+    <div class="layui-card">
+
+      
+      <div class="layui-card-body">
+        <div style="padding-bottom: 10px;" id="optDiv">
+          
+        </div>
+        
+        <table id="schoolTable" lay-filter="schoolTable"></table>
+
+        
+      </div>
+
+    </div>
+  </div>
+
+ <script src="/layuiadmin/layui/layui.js"></script>  
+ <!-- <script src="/learn/school/index.js"></script>  -->
+  <script>
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'useradmin', 'table','setter'], function(){
+    var $ = layui.$
+    ,form = layui.form
+    ,table = layui.table
+    ,admin = layui.admin
+    ;
+    
+    table.render({
+      elem: '#schoolTable'
+      ,url: layui.setter.apiURL + "/school/list"
+      ,cols: [[
+		{type:'checkbox'},
+        {field: 'name', width: 100, title: '学校名称'}
+        ,{field: 'address', title: '地址'}
+        ,{field: 'create_time', title: '创建时间'}
+        ,{title: '操作', width: 150, align:'center', fixed: 'right', toolbar: '#table-teacher'}
+      ]]
+      ,parseData: function(res){
+        console.log("parseData,res",res);
+        return {
+          "code": res.code > 0 ? 0 : res.code,
+          "msg": res.msg,
+          "count": res.data.value.total,
+          "data": res.data.value.list
+        };
+      }
+      //,where: {"u_type": 2}
+      ,headers: {"Authorization": (layui.data("learndb")["Authorization"] || '')}
+      ,request: {
+        pageName: 'page_num' //页码的参数名称，默认：page
+        ,limitName: 'page_size' //每页数据量的参数名，默认：limit
+      }
+      ,page: true
+	  
+      ,limit: 10
+      ,height: 'full-220'
+      ,text: '对不起，加载出现异常！'
+      ,done: function(res, curr, count){
+        //如果是异步请求数据方式，res即为你接口返回的信息。
+        //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+        console.log(res);
+        
+        //得到当前页码
+        console.log(curr); 
+        
+        //得到数据总量
+        console.log(count);
+      }
+    });
+  
+    //事件
+    var active = {
+      add: function(){
+        layer.open({
+          type: 2
+          ,title: '新增学校'
+          ,content: 'form.html'
+		  ,maxmin: true
+          ,area: ['900px', '470px']
+          ,btn: ['保存', '取消']
+          ,yes: function(index, layero){
+            var iframeWindow = window['layui-layer-iframe'+ index]
+            ,submitID = 'LAY-user-back-submit'
+            ,submit = layero.find('iframe').contents().find('#'+ submitID);
+            var lock = false;
+            //监听提交
+            iframeWindow.layui.form.on('submit('+ submitID +')', function(data){
+              if(lock){return;}
+              lock = true;
+               layui.admin.req({
+                  url: layui.setter.apiURL+'/school/add'
+                  ,data: data.field
+                  ,done: function(res){
+                    lock = false;
+                    var msg = "新增成功";
+                    var icon = 1;
+                    if(res.data.value < 0){
+                      msg = "新增失败";
+                      icon = 2;
+                    }
+
+                    layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+                    table.reload('schoolTable'); //数据刷新
+                  }
+                });
+
+              
+              layer.close(index); //关闭弹层
+            });  
+            
+            submit.trigger('click');
+          }
+        }); 
+      }
+    }  
+
+    //如果当前用户有对应的权限就给对应的按钮
+   
+    if(window.parent.perms.verify("school:add")){
+      $("#optDiv").append(`<button class="layui-btn layuiadmin-btn-admin" data-type="add">添加</button>`);
+    }
+
+    $('.layui-btn.layuiadmin-btn-admin').on('click', function(){
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+
+
+    
+          
+
+    
+  });
+
+
+
+  </script>
+</body>
+</html>
+

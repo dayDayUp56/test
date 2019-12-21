@@ -1,0 +1,135 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>添加学校</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+</head>
+<body>
+
+  <div class="layui-form" lay-filter="layuiadmin-form-admin" id="layuiadmin-form-admin" style="padding: 20px 30px 0 0;">
+    <div class="layui-form-item">
+      <label class="layui-form-label">学校名</label>
+      <div class="layui-input-block">
+        <input type="text" name="name" lay-verify="required" placeholder="请输入学校名" autocomplete="off" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">地区</label>
+      <div class="layui-input-block">
+        <div class="layui-inline">
+          <select name="pro_id" lay-verify="required">
+            
+          </select>
+        </div>
+        <div class="layui-inline">
+          <select name="city_id" lay-verify="required">
+            
+          </select>
+        </div>
+        <div class="layui-inline">
+          <select name="country_id">
+           
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">地址</label>
+      <div class="layui-input-block">
+        <input type="text" name="address" lay-verify="required" placeholder="请输入学校街道地址" autocomplete="off" class="layui-input">
+      </div>
+    </div>
+    
+    <div class="layui-form-item">
+      <label class="layui-form-label">类型</label>
+      <div class="layui-input-block">
+        <div class="layui-inline">
+          <select name="type" lay-verify="required">
+            <option value="">请选择类型</option>
+            <option value="1">小学</option>
+            <option value="2">初中</option>
+            <option value="3">高中</option>
+            <option value="4">大学</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">管理员手机号</label>
+      <div class="layui-input-inline">
+        <input type="text" name="user_phone" lay-verify="required|phone" placeholder="请输入管理员手机号" autocomplete="off" class="layui-input">
+      </div>
+      <label class="layui-form-label">管理员密码</label>
+      <div class="layui-input-inline">
+        <input type="password" name="user_password" lay-verify="required" placeholder="请输入管理员密码" autocomplete="off" class="layui-input">
+      </div>
+    </div>
+    
+
+    <div class="layui-form-item layui-hide">
+      <input type="button" lay-submit lay-filter="LAY-user-back-submit" id="LAY-user-back-submit" value="确认">
+    </div>
+  </div>
+
+  <script src="/layuiadmin/layui/layui.js"></script>  
+  <script>
+  var $;
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'form'], function(){
+    $ = layui.$
+    ,form = layui.form ;
+
+    renderCity("pro_id", 1);
+    
+    form.on("select",(data)=>{
+      var name = $(data.elem).attr("name");
+      switch(name){
+        case "pro_id":
+          renderCity("city_id", data.value);
+          renderCity("country_id",-1);
+        break;
+        case "city_id":
+          renderCity("country_id", data.value);
+        break;
+      }
+    });
+
+
+  });
+
+  function renderCity(name, pid){
+    if(pid == ""){
+      return;
+    }
+    if(pid == -1){//-1时清空name选项
+      $("select[name='"+name+"']").html(`<option value="">请选择</option>`);
+    }else{
+      var pros = parent.parent.cities.getCities(pid);
+    if(pros != null && pros.length > 0){
+      var proHTML = `<option value="">请选择</option>`;
+      for (var i = 0; i < pros.length; i++) {
+          var pro = pros[i];
+          proHTML += `<option value="`+pro.id+`">`+pro.name+`</option>`;
+      }
+      $("select[name='"+name+"']").html(proHTML);
+    }
+    }
+    
+    form.render("select");
+  }
+
+  </script>
+</body>
+</html>

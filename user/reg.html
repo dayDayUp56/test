@@ -1,0 +1,255 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>注册</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="../../layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="../../layuiadmin/style/admin.css" media="all">
+  <link rel="stylesheet" href="../../layuiadmin/style/login.css" media="all">
+</head>
+<body>
+
+
+  <div class="layadmin-user-login layadmin-user-display-show" id="LAY-user-login" style="display: none;">
+    <div class="layadmin-user-login-main">
+      <div class="layadmin-user-login-box layadmin-user-login-header">
+        <h2>智慧学</h2>
+        <p>欢迎登入--智慧学后台管理系统</p>
+      </div>
+      <div class="layadmin-user-login-box layadmin-user-login-body layui-form">
+        <div class="layui-form-item">
+          <div class="layui-row">
+            <input type="radio" name="u_type" value="1" title="学生" checked>
+            <input type="radio" name="u_type" value="2" title="老师">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-username" for="LAY-user-login-realname"></label>
+          <input type="text" name="realname" id="LAY-user-login-realname" lay-verify="required" placeholder="姓名" class="layui-input">
+        </div>
+
+        <div id="stu_noDiv">
+          <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-template" for="LAY-user-login-stu_no"></label>
+          <input type="text" name="stu_no" id="LAY-user-login-stu_no" lay-verify="required" placeholder="学号" class="layui-input">
+        </div>
+        </div>
+        
+
+        <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-cellphone" for="LAY-user-login-phone"></label>
+          <input type="text" name="phone" id="LAY-user-login-phone" lay-verify="phone" placeholder="手机" class="layui-input">
+        </div>
+
+        <div class="layui-form-item">
+          <div class="layui-row">
+            <div class="layui-col-xs7">
+              <label class="layadmin-user-login-icon layui-icon layui-icon-vercode" for="LAY-user-login-vercode"></label>
+              <input type="text" name="vercode" id="LAY-user-login-vercode" lay-verify="required" placeholder="验证码" class="layui-input">
+            </div>
+            <div class="layui-col-xs5">
+              <div style="margin-left: 10px;">
+                <button type="button" class="layui-btn layui-btn-primary layui-btn-fluid" id="LAY-user-getsmscode">获取验证码</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <div class="layui-row">
+            <div class="layui-col-xs6">
+              <select name="pro_id" id="pro_id" lay-verify="required">
+                <option value="">请选择省</option>
+              </select>
+            </div>
+            <div class="layui-col-xs6">
+              <select name="city_id" id="city_id" lay-verify="required">
+                <option value="">请选择市</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-auz" for="school_id"></label>
+          <select name="school_id" id="school_id" lay-verify="required">
+            <option value="">请选择学校</option>
+          </select>
+        </div>
+
+        <div id="idcardDiv">
+          
+        </div>
+        
+
+        <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-password" for="LAY-user-login-password"></label>
+          <input type="password" name="password" id="LAY-user-login-password" lay-verify="pass" placeholder="密码" class="layui-input">
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-password" for="LAY-user-login-repass"></label>
+          <input type="password" name="repass" id="LAY-user-login-repass" lay-verify="required" placeholder="确认密码" class="layui-input">
+        </div>
+        
+        
+        <div class="layui-form-item">
+          <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="LAY-user-reg-submit">注 册</button>
+        </div>
+        
+      </div>
+    </div>
+    
+  </div>
+
+  <script src="/layuiadmin/layui/layui.js"></script>  
+  <script>
+    var stuNoHtml = `<div class="layui-form-item">
+          <label class="layadmin-user-login-icon layui-icon layui-icon-template" for="LAY-user-login-stu_no"></label>
+          <input type="text" name="stu_no" id="LAY-user-login-stu_no" lay-verify="required" placeholder="学号" class="layui-input">
+        </div>`;
+    var idcardHtml = `<div class="layui-form-item">
+            <label class="layadmin-user-login-icon layui-icon layui-icon-auz" for="LAY-user-login-idcard"></label>
+            <input type="text" name="idcard" id="LAY-user-login-idcard" lay-verify="identity" placeholder="身份证号码" class="layui-input">
+          </div>`;
+
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'user'], function(){
+    var $ = layui.$
+    ,setter = layui.setter
+    ,admin = layui.admin
+    ,form = layui.form
+    ,router = layui.router();
+
+    form.on('radio()', function(data){
+      console.log(data.elem); //得到radio原始DOM对象
+      console.log(data.value); //被点击的radio的value值
+      switch(data.value){
+        case "1"://学生
+          $("#idcardDiv").html("");
+          $("#stu_noDiv").html(stuNoHtml);
+        break;
+        case "2"://老师
+          $("#idcardDiv").html(idcardHtml);
+          $("#stu_noDiv").html("");
+        break;
+      }
+
+      form.render();
+    }); 
+
+  
+    //提交
+    form.on('submit(LAY-user-reg-submit)', function(obj){
+      var field = obj.field;
+      
+      //确认密码
+      if(field.password !== field.repass){
+        return layer.msg('两次密码输入不一致');
+      }
+      
+      //是否同意用户协议
+      // if(!field.agreement){
+      //   return layer.msg('你必须同意用户协议才能注册');
+      // }
+
+      //请求接口
+      admin.req({
+        url: layui.setter.apiURL + '/user/register' //实际使用请改成服务端真实接口
+        ,data: field
+        ,done: function(res){
+          console.log(res);      
+          layer.msg('注册成功', {
+            offset: '15px'
+            ,icon: 1
+            ,time: 1000
+          }, function(){
+            location.href = "/views/user/login.html"; //跳转到登入页
+          });
+        }
+      });
+      
+      return false;
+    });
+
+    //加载省列表
+    reloadSelect("pro_id");
+
+    form.on("select",(data)=>{
+      var name = $(data.elem).attr("name");
+      //如果选的空，则清空下级
+      if(data.value == ""){
+        emptySelect(name);
+        return;
+      }
+      switch(name){
+        case "pro_id":
+          reloadSelect("city_id", data.value);
+        break;
+        case "city_id":
+          reloadSelect("school_id", data.value);
+        break;
+      }
+    });
+
+    function reloadSelect(id, ext){
+      
+      var url,defaultMsg;
+      switch(id){
+        case "pro_id":
+          defaultMsg = "请选择省";
+          url = '/city/schoolPros';  
+        break;
+        case "city_id":
+          defaultMsg = "请选择市";
+          url = '/city/schoolCitys/'+ext;
+        break;
+        case "school_id":
+          defaultMsg = "请选择学校";
+          url = '/city/schools/'+ext;
+        break;
+      }
+      //省市学校信息
+      admin.req({
+         url: setter.apiURL + url//实际使用请改成服务端真实接口
+         ,type: "get"
+        ,done: function(res){
+          var pros = res.data.value;
+          if(pros != null){
+            var html = `<option value=''>`+defaultMsg+`</option>`;
+            for (var k in pros) {
+              html += `<option value='`+k+`'>`+pros[k]+`</option>`;
+            }
+            $("#"+id).html(html);
+            form.render("select");
+          }
+        }
+      });
+    }
+    
+    function emptySelect(id){
+      switch(id){
+        case "pro_id":
+          $("#city_id").html("<option value=''>请选择市</option>");
+          $("#school_id").html("<option value=''>请选择学校</option>");
+        break;
+        case "city_id":
+          $("#school_id").html("<option value=''>请选择学校</option>");
+        break;
+      }
+      form.render("select");
+    }
+
+  });
+  </script>
+</body>
+</html>
