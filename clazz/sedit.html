@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>老师加入列表</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+ 
+
+
+  
+ 
+<div class="layui-row">
+    <div class="layui-col-xs5">
+      <table id="weijiaru" lay-filter="weijiaru"></table>
+    </div>
+	<div class="layui-col-xs1">
+	  <div id="optDiv"></div>
+	</div>
+    <div class="layui-col-xs5">
+      <table id="yijiaru" lay-filter="yijiaru"></table>
+    </div>
+  </div>
+
+
+<script type="text/javascript" id="optTpl">
+	
+
+			<a class = "layui-btn layui-btn-danger layui-btn-xs" lay-event = "del" >删除</a >
+			
+			
+		</script>
+
+ <script src="/layuiadmin/layui/layui.js"></script>  
+ <!-- <script src="/learn/school/index.js"></script>  -->
+  <script>
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'useradmin', 'table','setter'], function(){
+    var $ = layui.$
+    ,form = layui.form
+    ,table = layui.table
+    ,admin = layui.admin
+    ;
+    var id = layui.setter.getParams("id");//获取点击项的id
+	
+	table.on('tool(yijiaru)', function(obj) {
+	
+		if (obj.event == "del") {
+			var dellock = false;
+			layer.confirm('确定删除吗？', function(index) {
+				
+				dellock = true;
+				layui.admin.req({
+					url: layui.setter.apiURL + '/clazzUserR/' + obj.data.id + '/' + id
+						//,data: {"category_id": obj.data.id}
+						,
+					type: "delete",
+					done: function(res) {
+						var msg = "删除成功";
+						var icon = 1;
+						if (res.data.value < 0) {
+							msg = "删除失败";
+							icon = 2;
+						}
+	
+						layer.msg(msg, {
+							offset: '15px',
+							icon: icon,
+							time: 1000
+						});
+						dellock = false;
+						table.reload('yijiaru'); //数据刷新
+						table.reload('weijiaru');
+					}
+				});
+	
+			});
+		} 
+	});
+	
+    table.render({
+      elem: '#weijiaru'
+      ,url: layui.setter.apiURL + "/clazzUserR/getNotInClazzUsers"
+      ,cols: [[
+		
+        {field: 'realname', title: '学生姓名'}
+        ,{field: 'value', title: '学号',
+		templet:function(res){
+			return '<span>' + res.properties[0].value + '</span>'
+			}}
+        ,{type:'checkbox'}
+      ]]
+      ,parseData: function(res){
+        console.log("parseData,res",res);
+        return {
+          "code": res.code > 0 ? 0 : res.code,
+          "msg": res.msg,
+          "count": res.data.value.total,
+          "data": res.data.value.list
+        };
+      }
+      ,where: {"type": 0}
+      ,headers: {"Authorization": (layui.data("learndb")["Authorization"] || '')}
+      ,request: {
+        pageName: 'page_num' //页码的参数名称，默认：page
+        ,limitName: 'page_size' //每页数据量的参数名，默认：limit
+      }
+      ,page: true
+	  
+      ,limit: 10
+      ,height: 'full-220'
+      ,text: '对不起，加载出现异常！'
+      ,done: function(res, curr, count){
+        //如果是异步请求数据方式，res即为你接口返回的信息。
+        //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+        console.log(res);
+        
+        //得到当前页码
+        console.log(curr); 
+        
+        //得到数据总量
+        console.log(count);
+      }
+    });
+	
+	table.render({
+	  elem: '#yijiaru'
+	  ,url: layui.setter.apiURL + "/clazzUserR/getClazzUsers"
+	  ,cols: [[
+	
+	    {field: 'realname', title: '学生姓名'}
+	    ,{field: 'value', title: '学号',
+		templet:function(res){
+			return '<span>' + res.properties[0].value + '</span>'
+		}
+		}
+	   
+	    ,{title: '操作', width: 150, align:'center', fixed: 'right', toolbar: '#optTpl'}
+	  ]]
+	  ,parseData: function(res){
+	    console.log("parseData,res",res);
+	    return {
+	      "code": res.code > 0 ? 0 : res.code,
+	      "msg": res.msg,
+	      "count": res.data.value.total,
+	      "data": res.data.value.list
+	    };
+	  }
+	  ,where: {"type":0,"clazzId":id}
+	  ,headers: {"Authorization": (layui.data("learndb")["Authorization"] || '')}
+	  ,request: {
+	    pageName: 'page_num' //页码的参数名称，默认：page
+	    ,limitName: 'page_size' //每页数据量的参数名，默认：limit
+	  }
+	  ,page: true
+	  
+	  ,limit: 10
+	  ,height: 'full-220'
+	  ,text: '对不起，加载出现异常！'
+	  ,done: function(res, curr, count){
+	    //如果是异步请求数据方式，res即为你接口返回的信息。
+	    //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+	    console.log(res);
+	    console.log(res.data[0].properties[0].value);
+	    //得到当前页码
+	    console.log(curr); 
+	    
+	    //得到数据总量
+	    console.log(count);
+		
+		 //console.log(res.data[0].realname);
+	  }
+	});
+  
+    //事件
+    var active = {
+      add: function(){
+      var checkStatus = table.checkStatus('weijiaru')
+              ,checkData = checkStatus.data; //得到选中的数据
+				 var idList=checkData[0].id ;
+				var cl = checkData.length;
+				if(checkData.length === 0){
+				  return layer.msg('请选择数据');
+				}else if(checkData.length > 1){
+					for(var i=1;i<cl;i++){
+						 idList += ','+checkData[i].id;	
+					}	
+				}
+				
+				layui.admin.req({
+				   url: layui.setter.apiURL+'/clazzUserR'
+				   
+				   ,type: "post"
+				   ,data: {"u_type":"1","clazz_id":id,"user_ids":idList}
+				   ,done: function(res){
+					   console.log(id);
+					   console.log(checkData[0].id);
+				     lock = false;
+				          var msg = "新增成功";
+				          var icon = 1;
+				          if(res.data.value < 0){
+				            msg = "新增失败";
+				            icon = 2;
+				     }
+				
+				     layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+				     table.reload('yijiaru'); //数据刷新
+					 table.reload('weijiaru'); 
+				   }
+				 });
+				
+      }
+    }  
+
+    //如果当前用户有对应的权限就给对应的按钮
+   
+    
+    $("#optDiv").append(`<button class="layui-btn  layui-btn-sm layuiadmin-btn-admin" data-type="add"> 添加<i class="layui-icon">&#xe623;</i> </button>`);
+    
+
+    $('.layui-btn.layui-btn-sm.layuiadmin-btn-admin').on('click', function(){
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+
+
+    
+          
+
+    
+  });
+
+
+
+  </script>
+</body>
+</html>
+
