@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>新建试卷</title>
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+		<!-- <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script> -->
+		<!-- <script>
+		  tinymce.init({
+		    selector: '#mytextarea'
+		  });
+		</script> -->
+	</head>
+	<body>
+		<div class="layui-form" lay-filter="layuiadmin-form-admin" id="layuiadmin-form-admin" style="padding: 20px 30px 0 0;">
+		<div class="layui-container">  
+		<div class="layui-row">
+		    <div class="layui-col-xs3">
+		      <div id="subJect_tree" ></div>
+		    </div>
+		    <div class="layui-col-xs9">
+		      
+		      	<!-- 提示：如果你不想用form，你可以换成div等任何一个普通元素 -->
+		      	
+		      	      <!-- <textarea id="mytextarea"></textarea> -->
+		      	    
+		      
+		      <h3 style="text-align: center;"> </h3>
+		      <textarea id="demo_edit1" required  placeholder="题干" class="layui-textarea" name="question">题干（未完成/更换富文本编辑器）</textarea><br>
+		      <h3 style="text-align: center;"> </h3>
+		      <textarea id="demo_edit2" required  placeholder="答案" class="layui-textarea" name="answer">答案（未完成/更换富文本编辑器）</textarea><br>
+		      <h3 style="text-align: center;"> </h3>
+		      <textarea id="demo_edit3" required  placeholder="解析" class="layui-textarea" name="solution">解析（未完成/更换富文本编辑器）选好学科后页面左部弹出知识点节点树</textarea><br>
+		      
+		      	<div class="layui-form-item">
+		      		<label class="layui-form-label">年级</label>
+		      		<div class="layui-inline">
+		      			<select  lay-filter="xueli" >
+		      				<option value="">请选择类型</option>
+		      				<option value="1" id="xiaoxue">小学</option>
+		      				<option value="2" id="chuzhong">初中</option>
+		      				<option value="3" id="gaozhong">高中</option>
+		      				<option value="4" id="daxue">大学</option>
+		      			</select>
+		      		</div>
+		      		<div class="layui-inline">
+		      			<select name="grade_type" lay-filter="nianji" id="nianji">
+		      
+		      			</select>
+		      		</div>
+		      	</div>
+		      
+		      	<div class="layui-form-item">
+		      		<label class="layui-form-label">课程类型</label>
+		      		<div class="layui-input-block">
+		      			<div class="layui-inline" >
+		      				<select name="course_type" lay-filter="requireds" id="kechengleixing">
+		      
+		      				</select>
+		      			</div>
+		      		</div>
+		      	</div>
+		      
+		      	<div class="layui-form-item">
+		      		<label class="layui-form-label">题型</label>
+		      		<div class="layui-input-block">
+		      			<div class="layui-inline">
+		      				
+		      				    <label class="layui-form-label"></label>
+		      				    <div class="layui-input-block" id="radios">
+		      				      
+		      				    </div>
+		      				  
+		      			</div>
+		      		</div>
+		      	</div>
+		      
+		      	<div class="layui-form-item">
+		      		<label class="layui-form-label">难度系数</label>
+		      		<div class="layui-input-inline">
+		      			<input type="text" name="hard" required lay-verify="required" placeholder="请输入1-100的数字" autocomplete="off" class="layui-input">
+						
+						<input type="text" name="knowledge_type" id="kongLedge" style="display: none;" autocomplete="off" class="layui-input" >   
+						
+		      		</div>
+		      	</div>
+		    </div>
+		  </div>
+		</div>
+
+		
+			
+			
+
+			<div class="layui-form-item layui-hide">
+				<input type="button" lay-submit lay-filter="LAY-user-back-submit" id="LAY-user-back-submit" value="保存">
+			</div>
+			<!-- 更多表单结构排版请移步文档左侧【页面元素-表单】一项阅览 -->
+		</div>
+
+		<script src="/layuiadmin/layui/layui.js"></script>
+		<script type="text/javascript">
+			layui.config({
+				base: '/layuiadmin/' //静态资源所在路径
+			}).extend({
+				index: 'lib/index' //主入口模块
+			}).use(['index', 'form', 'setter', 'admin', 'user','tree','layedit'], function() {
+				var $ = layui.$,
+					form = layui.form,
+					setter = layui.setter,
+					tree = layui.tree,
+					layedit = layui.layedit,
+					admin = layui.admin;
+					
+					layedit.set({
+					  uploadImage: {
+					    url:setter.apiURL + '/common/uploadLayEitImg' //接口url
+					    //默认post
+					  }
+					});
+					
+					layedit.build('demo_edit1',{
+					height:130
+					});
+					layedit.build('demo_edit2',{
+					height:130
+								});
+					layedit.build('demo_edit3',{
+					height:130
+					});
+					
+					
+				form.on('select(xueli)', function(data) {
+					
+					layedit.build('demo_edit1',{
+					height:130
+					});
+					layedit.build('demo_edit2',{
+					height:130
+								});
+					layedit.build('demo_edit3',{
+					height:130
+					});
+					
+					console.log(data.value);
+					var nianjiHtml = "";
+					//1小学2初中3高中4大学
+					switch (data.value) {
+						case "1":
+							nianjiHtml =
+								`<option value="11">一年级</option>
+				   		<option value="12">二年级</option>
+				   		<option value="13">三年级</option>
+				   		<option value="14">四年级</option>
+				  		<option value="15">五年级</option>
+				   		<option value="16">六年级</option>`;
+							break;
+						case "2":
+							nianjiHtml =
+								`<option value="21">初一</option>
+				  		<option value="22">初二</option>
+				  		<option value="23">初三</option>`;
+							break;
+						case "3":
+							nianjiHtml =
+								`<option value="31">高一</option>
+				  		<option value="32">高二</option>
+				  		<option value="33">高三</option>`;
+							break;
+						case "4":
+							nianjiHtml =
+								`<option value="41">大一</option>
+				  		<option value="42">大二</option>
+				  		<option value="43">大三</option>
+				  		<option value="44">大四</option>`;
+							break;
+					}
+					$("#nianji").html(nianjiHtml);
+
+					admin.req({
+						url: setter.apiURL + '/subject/list' //实际使用请改成服务端真实接口
+							,
+						data: {
+							"page_num": 1,
+							"page_size": 100,
+							"type": data.value
+						},
+						type: "get",
+						done: function(res) {
+							console.log(res);
+							$('#kechengleixing').empty(); //清空select，不然每点一次都循环添加一遍数据越来越多
+							$("#kechengleixing").append('<option value="">' + "请选择" + '</option>');
+							for (var i = 0; i < res.data.value.list.length; i++) {
+								$("#kechengleixing").append('<option value="' + res.data.value.list[i].id + '">' + res.data.value.list[i]
+									.name + '</option>');
+							};
+
+							form.render("select");
+						},
+
+					});
+					
+					form.on('select(requireds)', function(data) {
+						console.log(data.value);
+					admin.req({
+						url: setter.apiURL +'/tree/getSubjectTreeByType/'+ data.value+'/'+'question_type'//实际使用请改成服务端真实接口
+							,
+						
+						type: "get",
+						done: function(res) {
+							console.log(res);
+							$('#radios').empty(); //清空select，不然每点一次都循环添加一遍数据越来越多
+							
+							for (var i = 0; i < res.data.value.length; i++) {
+								$("#radios").append('<input type="radio" name="question_type" value="'+res.data.value[i].id+'" title="'+res.data.value[i].name+'">');
+							};
+					
+							 form.render("radio");
+						},
+					
+					});
+					
+					admin.req({
+						url: setter.apiURL +'/tree/getSubjectTreeByType/'+ data.value+'/'+'knowdge_point'//实际使用请改成服务端真实接口
+							,
+						
+						type: "get",
+						done: function(res) {
+							
+							console.log(res.data.value);
+							
+							tree.render({
+							    elem: '#subJect_tree'
+							    ,data: res.data.value
+							    // ,showCheckbox: true  //是否显示复选框
+							    // ,id: 'demoId1'
+							    // ,isJump: true //是否允许点击节点时弹出新窗口跳转
+							    ,click: function(obj){
+							      var data = obj.data;  //获取当前点击的节点数据
+							      // layer.msg('状态：'+ obj.state + '<br>节点数据：' + data.name);
+								  $('#kongLedge').val(data.id);
+								  layer.msg($('#kongLedge').val());
+							    }
+							  });
+					// 		$('#radios').empty(); //清空select，不然每点一次都循环添加一遍数据越来越多
+							
+					// 		for (var i = 0; i < res.data.value.length; i++) {
+					// 			$("#radios").append('<input type="radio" name="qType" value="'+res.data.value[i].id+'" title="'+res.data.value[i].name+'">');
+					// 		};
+					
+					// 		 form.render("radio");
+						},
+					
+					});
+					
+					});
+
+					admin.req({
+						url: setter.apiURL + '/city/gets/1' //实际使用请改成服务端真实接口
+
+							,
+						type: "get",
+						done: function(res) {
+							console.log(res);
+							$('#shengfen').empty(); //清空select，不然每点一次都循环添加一遍数据越来越多
+							for (var i = 0; i < res.data.value.length; i++) {
+								$("#shengfen").append('<option value="' + res.data.value[i].id + '">' + res.data.value[i].name +
+									'</option>');
+							};
+
+							form.render("select");
+						},
+
+					});
+
+					form.render("select");
+
+				});
+
+
+
+			});
+		</script>
+	</body>
+</html>
