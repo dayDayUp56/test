@@ -1,0 +1,240 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>编辑属性</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+</head>
+<body>
+
+  <div class="layui-form" lay-filter="formDIV" id="formDIV" style="padding: 20px 30px 0 0;">
+
+    <div class="layui-form-item">
+      <!--<label class="layui-form-label">名称</label>
+       <div class="layui-input-block">
+        <input type="text" id="name" name="name" lay-verify="required" placeholder="请输入属性名" autocomplete="off" class="layui-input">
+      </div> -->
+    </div>
+    
+    <div id="editTree">
+      
+    </div>
+
+    <div class="layui-form-item layui-hide">
+      <input type="button" lay-submit lay-filter="submitBtn" id="submitBtn" value="确认">
+    </div>
+  </div>
+
+  <script src="/layuiadmin/layui/layui.js"></script>  
+  <script>
+  var $;
+  var oldCategor;
+
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'form','tree'], function(){
+    $ = layui.$
+    ,form = layui.form 
+    ,tree = layui.tree
+    ;
+
+    //要修改的类型id
+    var id=0,arr = location.search.split("id=");
+    
+    if(arr.length > 1){
+      id = arr[1];
+    }
+    
+    if(id > 0){
+      init(id).then(initForm);
+
+    }
+
+
+    function initForm(data){
+      console.log("initForm",data);
+      //oldCategor = data.value[0];
+      //$("#name").val(data.value.name);
+      // tree.reload('editTree', {
+      // });
+      var treeData = parseTreeData(data.value);
+
+      treeRender(treeData);
+    }
+ 
+    function parseTreeData(data){
+      var ret = {};
+      ret.root = true;
+      ret.id = data.id;
+      ret.spread = true;
+      ret.title = data.name;
+      ret.type = data.type;
+
+      // var children = data.children;
+      // if(children != null && children.length >0){
+      //   var _c = [];
+      //   for (var i = 0; i < children.length; i++) {
+      //     var cc = children[i];
+      //     var c = {};
+      //     c.id = cc.id;
+      //     c.title = cc.name;
+      //     c.type = cc.type;
+      //     _c.push(c);
+      //   }
+      // }
+      
+      ret.children = recursionChildren(data);
+      return [ret];
+    }
+
+    function recursionChildren(data){
+      var children = data.children;
+      if(children != null && children.length >0){
+        var _c = [];
+        for (var i = 0; i < children.length; i++) {
+          var cc = children[i];
+          var c = {};
+          c.id = cc.id;
+          c.title = cc.name;
+          c.type = cc.type;
+          c.children = recursionChildren(cc);
+          _c.push(c);
+        }
+
+        children = _c;
+      }
+      return children;
+    }
+
+    function init(id){
+      var dtd = $.Deferred();
+
+      layui.admin.req({
+        url: layui.setter.apiURL+'/tree/getMaterialTreeByType'
+        ,data: {"type": id}
+        ,type: "get"
+        ,done: function(res){
+          console.log("init", res);
+          // oldCategor = res.data.value;
+          // $("#name").val(res.data.value.name);
+          dtd.resolve(res.data);
+        }
+      });
+
+      return dtd;
+    }
+
+    window.categor_edit_commit = function(data){
+      var dtd = $.Deferred();
+      var field = data.field;
+      console.log("edit data", data.field);
+      var new_name = null;
+      if(oldCategor.name != field.name){
+        //属性名被修改了
+        new_name = field.name;
+      }
+
+      layui.admin.req({
+        url: layui.setter.apiURL+'/materialCategor/'+id
+        ,data: {"name": new_name}
+        ,type: "put"
+        ,done: function(res){
+          console.log("edit result",res);
+          dtd.resolve(new_name);
+        }
+      });
+    
+      return dtd;
+    }
+
+
+    function treeRender(tree_data){
+      //tree渲染
+      var inst1 = tree.render({
+        elem: '#editTree'  //绑定元素
+        ,id: 'editTree'
+        ,edit: ['add', 'update', 'del']
+        ,data: tree_data
+        ,operate: function(obj){
+          console.log("operate", obj);
+          var type = obj.type; //得到操作类型：add、edit、del
+          var data = obj.data; //得到当前节点的数据
+          var elem = obj.elem; //得到当前节点元素
+          
+          //Ajax 操作
+          var id = data.id; //得到节点索引
+          if(type === 'add'){ //增加节点
+            //返回 key 值
+            console.log("add");
+            return addNode(data.id);
+          } else if(type === 'update'){ //修改节点
+            console.log(elem.find('.layui-tree-txt').html()); //得到修改后的内容
+            updateNode(obj.data);
+          } else if(type === 'del'){ //删除节点
+            if(data.root){
+              return;
+            }
+            deleteNode(obj.data);
+          };
+        }
+      });
+    }
+    
+    //新增树属性节点
+    function addNode(pid){
+      var nodeId = 0;
+      layui.admin.req({
+        url: layui.setter.apiURL+'/tree/addMaterial'
+        ,data: {"name": "未命名","pid": pid}
+        ,async: false
+        ,done: function(res){
+          console.log("addNode",res);
+          nodeId = res.data.value;
+        }
+      });
+      
+      return nodeId;
+    }
+
+    function updateNode(data){
+      if(data.root){
+        //修改主属性
+        layui.admin.req({
+          url: layui.setter.apiURL+'/materialCategor/'+data.type
+          ,data: {"name": data.title}
+          ,type: "put"
+          ,done: function(res){
+          }
+        });
+      }else{
+        //修改子节点
+        layui.admin.req({
+          url: layui.setter.apiURL+'/tree/updateMaterialTree'
+          ,data: {"name": data.title ,"tree_id": data.id}
+          ,type: "put"
+        });
+      }
+    }
+
+    function deleteNode(data){
+      layui.admin.req({
+          url: layui.setter.apiURL+'/tree/deleteMaterialTree'
+          ,data: {"type": data.type ,"tree_id": data.id}
+          ,type: "delete"
+        });
+    }
+
+
+  });
+
+
+  </script>
+</body>
+</html>

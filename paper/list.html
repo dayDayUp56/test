@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>试卷列表</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+
+  <div class="layui-fluid">   
+    <div class="layui-card">
+
+      
+      <div class="layui-card-body">
+        <div style="padding-bottom: 10px;" id="optDiv">
+          
+        </div>
+        
+        <table id="paperTable" lay-filter="paperTable"></table>
+
+        
+      </div>
+
+    </div>
+  </div>
+  
+	<script type="text/javascript" id="optTpl">
+          <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">
+            <i class="layui-icon layui-icon-edit"></i>编辑</a>
+	</script>			
+			
+ <script src="/layuiadmin/layui/layui.js"></script>  
+ <!-- <script src="/learn/school/index.js"></script>  -->
+  <script>
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'useradmin', 'table','setter'], function(){
+    var $ = layui.$
+    ,form = layui.form
+    ,table = layui.table
+    ,admin = layui.admin
+    ;
+    
+    table.render({
+      elem: '#paperTable'
+      ,url: layui.setter.apiURL + "/paper"
+      ,cols: [[
+		{type:'checkbox'}
+        ,{field: 'name', title: '试卷名称'}
+        ,{field: 'create_time', title: '创建时间'}
+        ,{title: '操作', width: 150, align:'center', fixed: 'right', toolbar: '#optTpl'}
+      ]]
+      ,parseData: function(res){
+        console.log("parseData,res",res);
+        return {
+          "code": res.code > 0 ? 0 : res.code,
+          "msg": res.msg,
+          "count": res.data.value.total,
+          "data": res.data.value.list
+        };
+      }
+      ,where: {"param": 1}
+      ,headers: {"Authorization": (layui.data("learndb")["Authorization"] || '')}
+      ,request: {
+        pageName: 'page_num' //页码的参数名称，默认：page
+        ,limitName: 'page_size' //每页数据量的参数名，默认：limit
+      }
+      ,page: true
+      ,limit: 10
+      ,height: 'full-100'
+      ,text: '对不起，加载出现异常！'
+      ,done: function(res, curr, count){
+        //如果是异步请求数据方式，res即为你接口返回的信息。
+        //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+        console.log(res);
+        
+        //得到当前页码
+        console.log(curr); 
+        
+        //得到数据总量
+        console.log(count);
+      }
+    });
+  
+  table.on('tool(paperTable)', function(obj){
+  
+    if(obj.event == "del"){
+      var dellock = false;
+      layer.confirm('确定删除吗？', function(index) {
+        dellock = true;
+        layui.admin.req({
+          url: layui.setter.apiURL+'/clazz/'+obj.data.id
+          //,data: {"category_id": obj.data.id}
+          ,type: "delete"
+          ,done: function(res){
+            var msg = "删除成功";
+            var icon = 1;
+            if(res.data.value < 0){
+              msg = "删除失败";
+              icon = 2;
+            }
+  
+            layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+            dellock = false;
+            table.reload('paperTable'); //数据刷新
+          }
+        });
+  
+      });
+    }else if(obj.event == "edit"){
+     layer.open({
+       type: 2
+       ,title: '试卷详情'
+       ,content: 'edit.html?id=' + obj.data.id
+       ,area: ['790px', '500px']
+       ,btn: ['确定', '取消']
+       ,yes: function(index, layero){
+         var iframeWindow = window['layui-layer-iframe'+ index]
+         ,submitID = 'LAY-user-back-submit'
+         ,submit = layero.find('iframe').contents().find('#'+ submitID);
+         var lock = false;
+         //监听提交
+         iframeWindow.layui.form.on('submit('+ submitID +')', function(data){
+           if(lock){return;}
+           lock = true;
+            layui.admin.req({
+               url: layui.setter.apiURL+'/clazz/'+obj.data.id+'/'+data.field.grade_type+'/'+data.field.name
+               ,data: data.field
+  			 ,type: "put"
+               ,done: function(res){
+                 lock = false;
+                 var msg = "修改成功";
+                 var icon = 1;
+                 if(res.data.value < 0){
+                   msg = "修改失败";
+                   icon = 2;
+                 }
+         
+                 layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+                 table.reload('paperTable'); //数据刷新
+               }
+             });
+         
+           
+           layer.close(index); //关闭弹层
+         });  
+         
+         submit.trigger('click');
+       }
+     }); 
+    }
+  
+    //执行重载
+    // table.reload('LAY-user-manage', {
+    //   where: field
+    // });
+  });
+  
+    //事件
+    var active = {
+      batchdel: function(){
+        var checkStatus = table.checkStatus('paperTable')
+        ,checkData = checkStatus.data; //得到选中的数据
+          console.log(checkData[0].id);
+        if(checkData.length === 0){
+          return layer.msg('请选择数据');
+        }
+        
+        layer.prompt({
+          formType: 1
+          ,title: '敏感操作，请验证口令'
+        }, function(value, index){
+          layer.close(index);
+          
+          layer.confirm('确定删除吗？', function(index) {
+             console.log(checkData[0].id);
+           layui.admin.req({
+              url: layui.setter.apiURL+'/paper/'+checkData[0].id
+			  ,type: "delete"
+              //,data: data.field
+              ,done: function(res){
+                lock = false;
+                var msg = "删除成功";
+                var icon = 1;
+                if(res.data.value < 0){
+                  msg = "删除失败";
+                  icon = 2;
+                }
+           
+                layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+                table.reload('paperTable'); //数据刷新
+              }
+            });
+          });
+        }); 
+      }
+      ,add: function(){
+        layer.open({
+          type: 2
+          ,title: '添加试卷'
+          ,content: 'form.html'
+          ,area: ['800px', '470px']
+          ,btn: ['确定', '取消']
+          ,yes: function(index, layero){
+            var iframeWindow = window['layui-layer-iframe'+ index]
+            ,submitID = 'LAY-user-back-submit'
+            ,submit = layero.find('iframe').contents().find('#'+ submitID);
+            var lock = false;
+            //监听提交
+            iframeWindow.layui.form.on('submit('+ submitID +')', function(data){
+				
+				console.log(data);
+				
+              if(lock){return;}
+              lock = true;
+               // layui.admin.req({
+               //    url: layui.setter.apiURL+'/paper/'+data.field.name+'/'+data.field.course_type+'/'+data.field.grade_type+'/'+data.field.pro_id+'/'+data.field.page_year
+               //    //,data: data.field
+               //    ,done: function(res){
+               //      lock = false;
+               //      var msg = "新增成功";
+               //      var icon = 1;
+               //      if(res.data.value < 0){
+               //        msg = "新增失败";
+               //        icon = 2;
+               //      }
+
+               //      layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+               //      table.reload('paperTable'); //数据刷新
+               //    }
+               //  });
+
+              
+              layer.close(index); //关闭弹层
+            });  
+            
+            submit.trigger('click');
+          }
+        }); 
+      }
+    }  
+
+    //如果当前用户有对应的权限就给对应的按钮
+    if(window.parent.perms.verify("school:del")){
+      $("#optDiv").append(`<button class="layui-btn layuiadmin-btn-admin" data-type="batchdel">删除</button>`);
+    }
+    if(window.parent.perms.verify("school:add")){
+      $("#optDiv").append(`<button class="layui-btn layuiadmin-btn-admin" data-type="add">添加</button>`);
+    }
+
+    $('.layui-btn.layuiadmin-btn-admin').on('click', function(){
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+
+
+    
+          
+
+    
+  });
+
+
+
+  </script>
+</body>
+</html>
+
