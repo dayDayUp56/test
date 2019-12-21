@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>教材列表</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" href="/layuiadmin/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+
+  <div class="layui-fluid">   
+    <div class="layui-card">
+
+      
+      <div class="layui-card-body">
+        <div style="padding-bottom: 10px;" id="optDiv">
+          
+        </div>
+        
+        <table id="tableDIV" lay-filter="tableDIV"></table>  
+
+      </div>
+
+    </div>
+  </div>
+
+ <script src="/layuiadmin/layui/layui.js"></script>  
+  <script>
+  layui.config({
+    base: '/layuiadmin/' //静态资源所在路径
+  }).extend({
+    index: 'lib/index' //主入口模块
+  }).use(['index', 'useradmin', 'table','setter'], function(){
+    var $ = layui.$
+    ,form = layui.form
+    ,table = layui.table;
+    
+    
+          
+    //事件
+    var active = {
+      add: function(){
+        layer.open({
+          type: 2
+          ,title: '上传教材'
+          ,content: 'add.html'
+          ,area: ['600px', '500px']
+          ,btn: ['确定', '取消']
+          ,yes: function(index, layero){
+            var iframeWindow = window['layui-layer-iframe'+ index]
+            ,submitID = 'submitBtn'
+            ,submit = layero.find('iframe').contents().find('#'+ submitID);
+            var lock = false;
+            //监听提交
+            iframeWindow.layui.form.on('submit('+ submitID +')', function(data){
+              if(lock){return;}
+              lock = true;
+               layui.admin.req({
+                  url: layui.setter.apiURL+'/materialCategor/'
+                  ,data: data.field
+                  ,done: function(res){
+                    lock = false;
+                    var msg = "新增成功";
+                    var icon = 1;
+                    if(res.data.value < 0){
+                      msg = "新增失败";
+                      icon = 2;
+                    }
+
+                    layer.msg(msg, {offset: '15px',icon: icon ,time: 1000});
+                    table.reload('tableDIV'); //数据刷新
+                  }
+                });
+
+              
+              layer.close(index); //关闭弹层
+            });  
+            
+            submit.trigger('click');
+          }
+        }); 
+      }
+    }  
+
+    //如果当前用户有对应的权限就给对应的按钮
+    if(window.parent.perms.verify("material:add")){
+      $("#optDiv").append(`<button class="layui-btn layuiadmin-btn-admin" data-type="add">添加</button>`);
+    }
+    //添加按钮绑定click事件
+    $('.layui-btn.layuiadmin-btn-admin').on('click', function(){
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+
+  });
+
+
+
+  </script>
+</body>
+</html>
+
